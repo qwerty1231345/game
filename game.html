@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12251f">
+    <title>Русские шашки</title>
+    <link rel="stylesheet" href="game.css">
+</head>
+<body>
+    <main class="game-shell">
+        <header class="page-header">
+            <a class="back-button" href="index.html" id="back-button" aria-label="Вернуться назад" data-i18n-aria="backAria">← <span data-i18n="back">Назад</span></a>
+            <div class="brand">
+                <span class="eyebrow" data-i18n="tagline">ТИХАЯ СТРАТЕГИЯ</span>
+                <h1 data-i18n="pageTitle">Русские шашки</h1>
+            </div>
+            <button class="rematch-button" id="rematch-button" type="button">↻ <span data-i18n="rematch">Реванш</span></button>
+        </header>
+
+        <section class="game-layout" aria-label="Игра в шашки" data-i18n-aria="gameLabel">
+            <div class="board-column">
+                <div class="game-info">
+                    <div class="player-card player-you">
+                        <span class="player-piece white-piece" aria-hidden="true"></span>
+                        <div><strong data-i18n="you">Вы</strong><span data-i18n="white">Белые</span></div>
+                        <span class="turn-indicator" id="white-indicator" aria-label="Ваш ход" data-i18n-aria="yourTurnAria"></span>
+                    </div>
+                    <div class="versus" aria-hidden="true">VS</div>
+                    <div class="player-card player-bot">
+                        <span class="player-piece black-piece" aria-hidden="true"></span>
+                        <div><strong data-i18n="bot">Бот</strong><span id="bot-level-label">Средний</span></div>
+                        <span class="turn-indicator" id="black-indicator" aria-label="Ход бота" data-i18n-aria="botTurnAria"></span>
+                    </div>
+                </div>
+
+                <div class="board-frame">
+                    <div class="coordinates coordinates-files coordinates-top" aria-hidden="true"><span>А</span><span>Б</span><span>В</span><span>Г</span><span>Д</span><span>Е</span><span>Ж</span><span>З</span></div>
+                    <div class="board-row">
+                        <div class="coordinates coordinates-side" aria-hidden="true"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+                        <div class="board" id="board" role="group" aria-label="Игровая доска" data-i18n-aria="boardLabel"></div>
+                        <div class="coordinates coordinates-side" aria-hidden="true"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+                    </div>
+                    <div class="coordinates coordinates-files coordinates-bottom" aria-hidden="true"><span>А</span><span>Б</span><span>В</span><span>Г</span><span>Д</span><span>Е</span><span>Ж</span><span>З</span></div>
+                </div>
+
+                <div class="status-bar" aria-live="polite">
+                    <span class="status-dot" id="status-dot"></span>
+                    <p id="game-status">Ваш ход — выберите шашку</p>
+                </div>
+                <p class="board-hint" id="board-hint">Нажмите на шашку, чтобы увидеть возможные ходы</p>
+            </div>
+
+            <aside class="side-panel">
+                <section class="settings-card" aria-labelledby="settings-heading">
+                    <div class="section-heading">
+                        <div><span class="eyebrow" data-i18n="settings">НАСТРОЙКИ</span><h2 id="settings-heading" data-i18n="opponent">Соперник</h2></div>
+                        <span class="settings-icon" aria-hidden="true">⚙</span>
+                    </div>
+                    <label class="field-label" for="language" data-i18n="languageLabel">Язык сайта</label>
+                    <select id="language">
+                        <option value="ru">Русский</option>
+                        <option value="en">English</option>
+                    </select>
+                    <label class="field-label" for="difficulty" data-i18n="difficultyLabel">Сложность бота</label>
+                    <select id="difficulty">
+                        <option value="easy">Лёгкий</option>
+                        <option value="medium" selected>Средний</option>
+                        <option value="hard">Сложный</option>
+                    </select>
+                    <div class="rules-note"><span aria-hidden="true">✦</span><span id="rules-text">Русские правила: взятие обязательно, дамка ходит на любое расстояние.</span></div>
+                </section>
+
+                <section class="history-card" aria-labelledby="history-heading">
+                    <div class="section-heading history-heading">
+                        <div><span class="eyebrow" data-i18n="historyEyebrow">ХРОНИКА ПАРТИИ</span><h2 id="history-heading" data-i18n="historyHeading">История ходов</h2></div>
+                        <span class="move-count" id="move-count">0 ходов</span>
+                    </div>
+                    <p class="history-empty" id="history-empty" data-i18n="historyEmpty">Здесь появятся ходы. После окончания партии можно будет разобрать всю игру.</p>
+                    <ol class="move-list" id="move-list" aria-live="polite"></ol>
+                    <div class="history-footer" id="history-footer">Полная запись партии сохраняется до реванша</div>
+                </section>
+
+                <button class="new-game-button" id="new-game-button" type="button"><span aria-hidden="true">＋</span><span data-i18n="newGame">Начать новую партию</span></button>
+            </aside>
+        </section>
+        <footer class="page-footer"><span data-i18n="footerThink">ПРОДУМЫВАЙТЕ КАЖДЫЙ ХОД</span><span>♟</span><span data-i18n="footerWish">УДАЧНОЙ ИГРЫ</span></footer>
+    </main>
+
+    <div class="route-dialog" id="route-dialog" role="dialog" aria-modal="true" aria-labelledby="route-heading" hidden>
+        <div class="route-card">
+            <span class="eyebrow" data-i18n="routeEyebrow">ЕСТЬ НЕСКОЛЬКО ВАРИАНТОВ</span>
+            <h2 id="route-heading" data-i18n="routeHeading">Выберите маршрут</h2>
+            <div class="route-options" id="route-options"></div>
+            <button class="route-cancel" id="route-cancel" type="button" data-i18n="cancel">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            const boardElement = document.getElementById("board");
+            const statusElement = document.getElementById("game-status");
+            const hintElement = document.getElementById("board-hint");
+            const historyElement = document.getElementById("move-list");
+            const historyEmptyElement = document.getElementById("history-empty");
+            const historyFooterElement = document.getElementById("history-footer");
+            const moveCountElement = document.getElementById("move-count");
+            const difficultyElement = document.getElementById("difficulty");
+            const languageElement = document.getElementById("language");
+            const botLevelElement = document.getElementById("bot-level-label");
+            const routeDialog = document.getElementById("route-dialog");
+            const routeOptionsElement = document.getElementById("route-options");
+            const translations = {
+                ru: {
+                    pageTitle: "Русские шашки",
+                    tagline: "ТИХАЯ СТРАТЕГИЯ",
+                    back: "Назад",
+                    backAria: "Вернуться назад",
+                    rematch: "Реванш",
+                    gameLabel: "Игра в шашки",
+                    you: "Вы",
+                    white: "Белые",
+                    bot: "Бот",
+                    yourTurnAria: "Ваш ход",
+                    botTurnAria: "Ход бота",
+                    boardLabel: "Игровая доска",
+                    settings: "НАСТРОЙКИ",
+                    opponent: "Соперник",
+                    languageLabel: "Язык сайта",
+                    difficultyLabel: "Сложность бота",
+                    levels: { easy: "Лёгкий", medium: "Средний", hard: "Сложный" },
+                    rules: "Русские правила: взятие обязательно, дамка ходит на любое расстояние.",
+                    historyEyebrow: "ХРОНИКА ПАРТИИ",
+                    historyHeading: "История ходов",
+                    historyEmpty: "Здесь появятся ходы. После окончания партии можно будет разобрать всю игру.",
+                    historyFooter: "Полная запись партии сохраняется до реванша",
+                    gameFinishedFooter: "Партия завершена — все ходы сохранены выше",
+                    newGame: "Начать новую партию",
+                    footerThink: "ПРОДУМЫВАЙТЕ КАЖДЫЙ ХОД",
+                    footerWish: "УДАЧНОЙ ИГРЫ",
+                    routeEyebrow: "ЕСТЬ НЕСКОЛЬКО ВАРИАНТОВ",
+                    routeHeading: "Выберите маршрут",
+                    cancel: "Отмена",
+                    yourTurn: "Ваш ход — выберите шашку",
+                    selectCheckerHint: "Нажмите на шашку, чтобы увидеть возможные ходы",
+                    captureRequired: "Взятие обязательно",
+                    chooseCapture: "Выберите подсвеченное поле для взятия",
+                    checkerSelected: "Выбрана шашка",
+                    chooseMove: "Выберите подсвеченное поле для хода",
+                    availableCapture: "Есть обязательное взятие — подсвечены шашки с возможностью взятия",
+                    botThinking: "Бот думает…",
+                    botThinkingHint: "Бот выбирает свой ход",
+                    whiteWon: "Вы победили! Отличная партия.",
+                    blackWon: "Бот победил. Попробуем ещё раз?",
+                    replayHint: "Нажмите «Реванш», чтобы сыграть снова",
+                    captured: "взято",
+                    king: "дамка",
+                    emptySquare: "пусто",
+                    whiteChecker: "белая шашка",
+                    blackChecker: "чёрная шашка",
+                    youMove: "Вы",
+                    botMove: "Бот",
+                    moveCount: function (count) {
+                        const remainder = count % 100;
+                        if (remainder >= 11 && remainder <= 14) return count + " ходов";
+                        const lastDigit = count % 10;
+                        return count + (lastDigit === 1 ? " ход" : lastDigit >= 2 && lastDigit <= 4 ? " хода" : " ходов");
+                    }
+                },
+                en: {
+                    pageTitle: "Checkers",
+                    tagline: "A QUIET STRATEGY",
+                    back: "Back",
+                    backAria: "Go back",
+                    rematch: "Rematch",
+                    gameLabel: "Checkers game",
+                    you: "You",
+                    white: "White",
+                    bot: "Bot",
+                    yourTurnAria: "Your turn",
+                    botTurnAria: "Bot's turn",
+                    boardLabel: "Checkers board",
+                    settings: "SETTINGS",
+                    opponent: "Opponent",
+                    languageLabel: "Website language",
+                    difficultyLabel: "Bot difficulty",
+                    levels: { easy: "Easy", medium: "Medium", hard: "Hard" },
+                    rules: "Russian draughts rules: captures are compulsory, and kings can move any distance.",
+                    historyEyebrow: "MATCH RECORD",
+                    historyHeading: "Move history",
+                    historyEmpty: "Your moves will appear here. Review the full game after the match.",
+                    historyFooter: "The complete match record stays here until a rematch",
+                    gameFinishedFooter: "Match finished — all moves are listed above",
+                    newGame: "Start a new game",
+                    footerThink: "THINK THROUGH EVERY MOVE",
+                    footerWish: "GOOD LUCK",
+                    routeEyebrow: "MORE THAN ONE ROUTE",
+                    routeHeading: "Choose a route",
+                    cancel: "Cancel",
+                    yourTurn: "Your turn — choose a checker",
+                    selectCheckerHint: "Select a checker to see its legal moves",
+                    captureRequired: "A capture is compulsory",
+                    chooseCapture: "Choose a highlighted square to capture",
+                    checkerSelected: "Checker selected",
+                    chooseMove: "Choose a highlighted square to move",
+                    availableCapture: "A capture is compulsory — highlighted checkers can capture",
+                    botThinking: "The bot is thinking…",
+                    botThinkingHint: "The bot is choosing a move",
+                    whiteWon: "You win! Well played.",
+                    blackWon: "The bot wins. Try again?",
+                    replayHint: "Choose “Rematch” to play again",
+                    captured: "captured",
+                    king: "king",
+                    emptySquare: "empty",
+                    whiteChecker: "white checker",
+                    blackChecker: "black checker",
+                    youMove: "You",
+                    botMove: "Bot",
+                    moveCount: function (count) { return count + (count === 1 ? " move" : " moves"); }
+                }
+            };
+            const files = "abcdefgh";
+            let language = "ru";
+            let board;
+            let selectedSquare = null;
+            let legalMoves = [];
+            let history = [];
+            let turn = "w";
+            let gameOver = false;
+            let botThinking = false;
+            let botTimer = null;
+            let gameWinner = null;
+            let pendingRoutes = [];
+
+            function newBoard() {
+                const next = Array.from({ length: 8 }, function () { return Array(8).fill(null); });
+                for (let row = 0; row < 3; row += 1) {
+                    for (let col = 0; col < 8; col += 1) {
+                        if ((row + col) % 2 === 1) next[row][col] = { color: "b", king: false };
+                    }
+                }
+                for (let row = 5; row < 8; row += 1) {
+                    for (let col = 0; col < 8; col += 1) {
+                        if ((row + col) % 2 === 1) next[row][col] = { color: "w", king: false };
+                    }
+                }
+                return next;
+            }
+
+            function copyBoard(source) {
+                return source.map(function (row) {
+                    return row.map(function (piece) { return piece ? { color: piece.color, king: piece.king } : null; });
+                });
+            }
+
+            function inside(row, col) {
+                return row >= 0 && row < 8 && col >= 0 && col < 8;
+            }
+
+            function sameSquare(a, b) {
+                return a && b && a.row === b.row && a.col === b.col;
+            }
+
+            function squareName(square) {
+                return files[square.col] + (8 - square.row);
+            }
+
+            function text(key) {
+                return translations[language][key];
+            }
+
+            function applyLanguage() {
+                language = languageElement.value;
+                const dictionary = translations[language];
+                document.documentElement.lang = language;
+                document.title = dictionary.pageTitle;
+                document.querySelectorAll("[data-i18n]").forEach(function (element) {
+                    element.textContent = dictionary[element.dataset.i18n];
+                });
+                document.querySelectorAll("[data-i18n-aria]").forEach(function (element) {
+                    element.setAttribute("aria-label", dictionary[element.dataset.i18nAria]);
+                });
+                Array.prototype.forEach.call(difficultyElement.options, function (option) {
+                    option.textContent = dictionary.levels[option.value];
+                });
+                botLevelElement.textContent = dictionary.levels[difficultyElement.value];
+                document.getElementById("rules-text").textContent = dictionary.rules;
+                document.querySelectorAll(".coordinates-files span").forEach(function (element, index) {
+                    const fileIndex = index % 8;
+                    element.textContent = language === "ru" ? "АБВГДЕЖЗ"[fileIndex] : files[fileIndex].toUpperCase();
+                });
+                renderBoard();
+                renderHistory();
+                showStatus();
+                if (!routeDialog.hidden) renderRouteOptions();
+            }
+
+            function captureSteps(source, row, col, piece) {
+                const steps = [];
+                const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                directions.forEach(function (direction) {
+                    let r = row + direction[0];
+                    let c = col + direction[1];
+                    if (!piece.king) {
+                        const landingRow = row + direction[0] * 2;
+                        const landingCol = col + direction[1] * 2;
+                        if (inside(landingRow, landingCol) && source[r][c] && source[r][c].color !== piece.color && !source[landingRow][landingCol]) {
+                            steps.push({ row: landingRow, col: landingCol, taken: { row: r, col: c } });
+                        }
+                        return;
+                    }
+                    while (inside(r, c) && !source[r][c]) {
+                        r += direction[0];
+                        c += direction[1];
+                    }
+                    if (!inside(r, c) || source[r][c].color === piece.color) return;
+                    const taken = { row: r, col: c };
+                    r += direction[0];
+                    c += direction[1];
+                    while (inside(r, c) && !source[r][c]) {
+                        steps.push({ row: r, col: c, taken: taken });
+                        r += direction[0];
+                        c += direction[1];
+                    }
+                });
+                return steps;
+            }
+
+            function capturesForPiece(source, row, col) {
+                const found = [];
+                const piece = source[row][col];
+                function continueCapture(currentBoard, positionRow, positionCol, currentPiece, taken, path) {
+                    const steps = captureSteps(currentBoard, positionRow, positionCol, currentPiece);
+                    if (!steps.length) {
+                        found.push({
+                            from: { row: row, col: col },
+                            to: { row: positionRow, col: positionCol },
+                            captures: taken,
+                            path: path
+                        });
+                        return;
+                    }
+                    steps.forEach(function (step) {
+                        const next = copyBoard(currentBoard);
+                        next[positionRow][positionCol] = null;
+                        next[step.taken.row][step.taken.col] = null;
+                        const movedPiece = { color: currentPiece.color, king: currentPiece.king };
+                        if ((movedPiece.color === "w" && step.row === 0) || (movedPiece.color === "b" && step.row === 7)) movedPiece.king = true;
+                        next[step.row][step.col] = movedPiece;
+                        continueCapture(next, step.row, step.col, movedPiece, taken.concat([{ row: step.taken.row, col: step.taken.col }]), path.concat([{ row: step.row, col: step.col }]));
+                    });
+                }
+                continueCapture(source, row, col, piece, [], []);
+                return found.filter(function (move) { return move.captures.length > 0; });
+            }
+
+            function getLegalMoves(source, color) {
+                const captures = [];
+                for (let row = 0; row < 8; row += 1) {
+                    for (let col = 0; col < 8; col += 1) {
+                        if (source[row][col] && source[row][col].color === color) captures.push.apply(captures, capturesForPiece(source, row, col));
+                    }
+                }
+                if (captures.length) return captures;
+
+                const moves = [];
+                const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                for (let row = 0; row < 8; row += 1) {
+                    for (let col = 0; col < 8; col += 1) {
+                        const piece = source[row][col];
+                        if (!piece || piece.color !== color) continue;
+                        directions.forEach(function (direction) {
+                            if (!piece.king && direction[0] !== (color === "w" ? -1 : 1)) return;
+                            let r = row + direction[0];
+                            let c = col + direction[1];
+                            while (inside(r, c) && !source[r][c]) {
+                                moves.push({
+                                    from: { row: row, col: col },
+                                    to: { row: r, col: c },
+                                    captures: [],
+                                    path: [{ row: r, col: c }]
+                                });
+                                if (!piece.king) break;
+                                r += direction[0];
+                                c += direction[1];
+                            }
+                        });
+                    }
+                }
+                return moves;
+            }
+
+            function applyMove(source, move) {
+                const next = copyBoard(source);
+                const piece = next[move.from.row][move.from.col];
+                next[move.from.row][move.from.col] = null;
+                move.captures.forEach(function (square) { next[square.row][square.col] = null; });
+                if ((piece.color === "w" && move.to.row === 0) || (piece.color === "b" && move.to.row === 7)) piece.king = true;
+                next[move.to.row][move.to.col] = piece;
+                return next;
+            }
+
+            function moveDescription(move, promoted) {
+                const points = [move.from].concat(move.path);
+                const separator = move.captures.length ? " × " : " — ";
+                let description = points.map(squareName).join(separator);
+                if (move.captures.length) description += "  ·  " + text("captured") + ": " + move.captures.map(squareName).join(", ");
+                if (promoted) description += "  ·  " + text("king");
+                return description;
+            }
+
+            function renderBoard() {
+                boardElement.textContent = "";
+                const destinations = legalMoves.filter(function (move) {
+                    return selectedSquare && sameSquare(move.from, selectedSquare);
+                });
+                for (let row = 0; row < 8; row += 1) {
+                    for (let col = 0; col < 8; col += 1) {
+                        const square = document.createElement("button");
+                        const piece = board[row][col];
+                        const position = { row: row, col: col };
+                        const isDark = (row + col) % 2 === 1;
+                        square.type = "button";
+                        square.className = "square " + (isDark ? "dark-square" : "light-square");
+                        square.setAttribute("aria-label", squareName(position) + (piece ? ", " + text(piece.color === "w" ? "whiteChecker" : "blackChecker") + (piece.king ? ", " + text("king") : "") : ", " + text("emptySquare")));
+                        square.dataset.row = String(row);
+                        square.dataset.col = String(col);
+                        if (selectedSquare && sameSquare(selectedSquare, position)) square.classList.add("is-selected");
+                        if (destinations.some(function (move) { return sameSquare(move.to, position); })) {
+                            square.classList.add("is-target");
+                            if (destinations.some(function (move) { return sameSquare(move.to, position) && move.captures.length; })) square.classList.add("is-capture-target");
+                        }
+                        if (piece) {
+                            const checker = document.createElement("span");
+                            checker.className = "checker " + (piece.color === "w" ? "checker-white" : "checker-black");
+                            if (piece.king) checker.classList.add("checker-king");
+                            checker.setAttribute("aria-hidden", "true");
+                            square.appendChild(checker);
+                        }
+                        square.addEventListener("click", onSquareClick);
+                        boardElement.appendChild(square);
+                    }
+                }
+            }
+
+            function renderHistory() {
+                historyElement.textContent = "";
+                historyEmptyElement.hidden = history.length > 0;
+                historyFooterElement.textContent = gameOver ? text("gameFinishedFooter") : text("historyFooter");
+                const count = history.length;
+                moveCountElement.textContent = text("moveCount")(count);
+                history.forEach(function (entry, index) {
+                    const item = document.createElement("li");
+                    item.className = "move-row";
+                    const number = document.createElement("span");
+                    number.className = "move-number";
+                    number.textContent = String(index + 1).padStart(2, "0");
+                    const player = document.createElement("span");
+                    player.className = "move-player " + (entry.color === "w" ? "move-white" : "move-black");
+                    player.textContent = text(entry.color === "w" ? "youMove" : "botMove");
+                    const notation = document.createElement("span");
+                    notation.className = "move-notation";
+                    notation.textContent = moveDescription(entry.move, entry.promoted);
+                    item.append(number, player, notation);
+                    historyElement.appendChild(item);
+                });
+                if (history.length) historyElement.scrollTop = historyElement.scrollHeight;
+            }
+
+            function setTurnIndicators() {
+                document.getElementById("white-indicator").classList.toggle("is-active", turn === "w" && !gameOver);
+                document.getElementById("black-indicator").classList.toggle("is-active", turn === "b" && !gameOver);
+                document.getElementById("status-dot").classList.toggle("thinking", botThinking);
+            }
+
+            function showStatus() {
+                let message;
+                let hint;
+                if (gameOver) {
+                    message = text(gameWinner === "w" ? "whiteWon" : "blackWon");
+                    hint = text("replayHint");
+                } else if (botThinking) {
+                    message = text("botThinking");
+                    hint = text("botThinkingHint");
+                } else if (selectedSquare) {
+                    const hasCapture = legalMoves.some(function (move) { return sameSquare(move.from, selectedSquare) && move.captures.length; });
+                    message = text(hasCapture ? "captureRequired" : "checkerSelected");
+                    hint = text(hasCapture ? "chooseCapture" : "chooseMove");
+                } else {
+                    message = text("yourTurn");
+                    hint = text(legalMoves.some(function (move) { return move.captures.length; }) ? "availableCapture" : "selectCheckerHint");
+                }
+                statusElement.textContent = message;
+                hintElement.textContent = hint;
+                setTurnIndicators();
+            }
+
+            function recordMove(move, color, previousBoard) {
+                const movedPiece = previousBoard[move.from.row][move.from.col];
+                const promoted = !movedPiece.king && ((color === "w" && move.to.row === 0) || (color === "b" && move.to.row === 7));
+                history.push({ color: color, move: move, promoted: promoted });
+                renderHistory();
+            }
+
+            function finishGame(winner) {
+                gameOver = true;
+                gameWinner = winner;
+                selectedSquare = null;
+                legalMoves = [];
+                showStatus();
+                document.getElementById("status-dot").classList.add("game-finished");
+                renderBoard();
+                renderHistory();
+            }
+
+            function afterMove(move, color) {
+                const previousBoard = board;
+                board = applyMove(board, move);
+                recordMove(move, color, previousBoard);
+                selectedSquare = null;
+                turn = color === "w" ? "b" : "w";
+                legalMoves = getLegalMoves(board, turn);
+                if (!legalMoves.length) {
+                    finishGame(color);
+                    return;
+                }
+                if (turn === "b") {
+                    botThinking = true;
+                    showStatus();
+                    renderBoard();
+                    botTimer = window.setTimeout(function () {
+                        botTimer = null;
+                        makeBotMove();
+                    }, 180);
+                } else {
+                    botThinking = false;
+                    showStatus();
+                    renderBoard();
+                }
+            }
+
+            function onSquareClick(event) {
+                if (gameOver || turn !== "w" || botThinking || routeDialog.hidden === false) return;
+                const row = Number(event.currentTarget.dataset.row);
+                const col = Number(event.currentTarget.dataset.col);
+                const square = { row: row, col: col };
+                const piece = board[row][col];
+                const options = selectedSquare ? legalMoves.filter(function (move) {
+                    return sameSquare(move.from, selectedSquare) && sameSquare(move.to, square);
+                }) : [];
+
+                if (options.length === 1) {
+                    afterMove(options[0], "w");
+                    return;
+                }
+                if (options.length > 1) {
+                    openRouteDialog(options);
+                    return;
+                }
+                if (piece && piece.color === "w" && legalMoves.some(function (move) { return sameSquare(move.from, square); })) {
+                    selectedSquare = square;
+                    renderBoard();
+                    showStatus();
+                    return;
+                }
+                selectedSquare = null;
+                renderBoard();
+                showStatus();
+            }
+
+            function renderRouteOptions() {
+                routeOptionsElement.textContent = "";
+                pendingRoutes.forEach(function (move) {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "route-option";
+                    button.textContent = moveDescription(move, false);
+                    button.addEventListener("click", function () {
+                        routeDialog.hidden = true;
+                        afterMove(move, "w");
+                    });
+                    routeOptionsElement.appendChild(button);
+                });
+            }
+
+            function openRouteDialog(options) {
+                pendingRoutes = options;
+                renderRouteOptions();
+                routeDialog.hidden = false;
+                routeOptionsElement.querySelector("button").focus();
+            }
+
+            function evaluate(source) {
+                let score = 0;
+                for (let row = 0; row < 8; row += 1) {
+                    for (let col = 0; col < 8; col += 1) {
+                        const piece = source[row][col];
+                        if (!piece) continue;
+                        const sign = piece.color === "b" ? 1 : -1;
+                        const advancement = piece.color === "b" ? row : 7 - row;
+                        const center = 3.5 - Math.abs(3.5 - col);
+                        score += sign * (piece.king ? 185 : 100 + advancement * 4 + center * 2);
+                    }
+                }
+                return score;
+            }
+
+            function orderedMoves(moves) {
+                return moves.slice().sort(function (a, b) {
+                    const scoreA = a.captures.length * 100 + (a.to.row === 0 || a.to.row === 7 ? 8 : 0);
+                    const scoreB = b.captures.length * 100 + (b.to.row === 0 || b.to.row === 7 ? 8 : 0);
+                    return scoreB - scoreA;
+                });
+            }
+
+            function minimax(source, color, depth, alpha, beta) {
+                const moves = getLegalMoves(source, color);
+                if (!moves.length) return color === "b" ? -10000 - depth : 10000 + depth;
+                if (depth === 0) return evaluate(source);
+                const ordered = orderedMoves(moves);
+                if (color === "b") {
+                    let best = -Infinity;
+                    for (let i = 0; i < ordered.length; i += 1) {
+                        best = Math.max(best, minimax(applyMove(source, ordered[i]), "w", depth - 1, alpha, beta));
+                        alpha = Math.max(alpha, best);
+                        if (beta <= alpha) break;
+                    }
+                    return best;
+                }
+                let best = Infinity;
+                for (let i = 0; i < ordered.length; i += 1) {
+                    best = Math.min(best, minimax(applyMove(source, ordered[i]), "b", depth - 1, alpha, beta));
+                    beta = Math.min(beta, best);
+                    if (beta <= alpha) break;
+                }
+                return best;
+            }
+
+            function chooseBotMove(moves) {
+                if (difficultyElement.value === "easy") return moves[Math.floor(Math.random() * moves.length)];
+                if (difficultyElement.value === "medium") {
+                    return orderedMoves(moves).reduce(function (best, move) {
+                        const score = evaluate(applyMove(board, move)) + Math.random() * 5;
+                        return !best || score > best.score ? { move: move, score: score } : best;
+                    }, null).move;
+                }
+                let bestMove = moves[0];
+                let bestScore = -Infinity;
+                orderedMoves(moves).forEach(function (move) {
+                    const score = minimax(applyMove(board, move), "w", 4, -Infinity, Infinity);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = move;
+                    }
+                });
+                return bestMove;
+            }
+
+            function makeBotMove() {
+                if (gameOver || turn !== "b") return;
+                const move = chooseBotMove(legalMoves);
+                botThinking = false;
+                afterMove(move, "b");
+            }
+
+            function resetGame() {
+                if (botTimer !== null) {
+                    window.clearTimeout(botTimer);
+                    botTimer = null;
+                }
+                board = newBoard();
+                history = [];
+                turn = "w";
+                gameOver = false;
+                gameWinner = null;
+                botThinking = false;
+                selectedSquare = null;
+                legalMoves = getLegalMoves(board, "w");
+                document.getElementById("status-dot").classList.remove("game-finished", "thinking");
+                routeDialog.hidden = true;
+                pendingRoutes = [];
+                botLevelElement.textContent = difficultyElement.options[difficultyElement.selectedIndex].text;
+                showStatus();
+                renderBoard();
+                renderHistory();
+            }
+
+            document.getElementById("rematch-button").addEventListener("click", resetGame);
+            document.getElementById("new-game-button").addEventListener("click", resetGame);
+            document.getElementById("route-cancel").addEventListener("click", function () {
+                routeDialog.hidden = true;
+                selectedSquare = null;
+                renderBoard();
+            });
+            routeDialog.addEventListener("click", function (event) {
+                if (event.target === routeDialog) {
+                    routeDialog.hidden = true;
+                    selectedSquare = null;
+                    renderBoard();
+                }
+            });
+            document.getElementById("back-button").addEventListener("click", function (event) {
+                if (window.history.length > 1) {
+                    event.preventDefault();
+                    window.history.back();
+                }
+            });
+            difficultyElement.addEventListener("change", function () {
+                botLevelElement.textContent = translations[language].levels[difficultyElement.value];
+            });
+            languageElement.addEventListener("change", applyLanguage);
+
+            resetGame();
+        }());
+    </script>
+</body>
+</html>
